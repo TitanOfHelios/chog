@@ -1,0 +1,15 @@
+{
+  "name": "oyun-multiplayer",
+  "private": true,
+  "version": "2.0.0",
+  "description": "3D çim alanı - TypeScript multiplayer oyunu (tek komutla client + server)",
+  "scripts": {
+    "postinstall": "npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n SERVER,CLIENT -c yellow,cyan \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix server && npm run build --prefix client",
+    "start": "concurrently -n SERVER,CLIENT -c yellow,cyan \"npm start --prefix server\" \"npm run preview --prefix client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

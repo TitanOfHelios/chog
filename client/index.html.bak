@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The 7 Seconds Chog</title>
+<link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+
+<div id="loading">Sahne yükleniyor…</div>
+
+<div id="loginScreen">
+  <div class="loginCard">
+    <h1 id="loginTitle">The 7 Seconds Chog</h1>
+    <p id="loginDesc">Tek oda — odaya giren herkes aynı alanda birlikte olur. İsmini yaz ve gir.</p>
+    <label id="nameLabel" for="nameInput">İsim</label>
+    <input id="nameInput" maxlength="16" placeholder="Adını yaz">
+    <button id="joinBtn">Odaya Gir</button>
+    <div id="loginMsg"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="hud">
+    
+    <div id="coinBar">
+      <div id="coinBarTrack"><div id="coinBarFill"></div></div>
+      <div id="coinBarLabel">Para: 7.0s</div>
+    </div>
+    <div id="scoreBadge"><span id="scoreLabel">Skor:</span> <b id="scoreVal">0</b></div>
+    <div id="connBadge" title="Sunucu gecikmesi">●</div>
+    <div id="leaderboardBtn">SIRALAMA</div>
+    <div id="leaderboardPanel"><h3 id="lbTitle">Sıralama</h3><div id="lbList"></div></div>
+    <div id="toast"></div>
+    <div id="joyZone"></div>
+    <div id="sprintBtn">HIZLAN</div>
+    <div id="jumpBtn">ZIPLA</div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

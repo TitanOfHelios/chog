@@ -1,0 +1,84 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+
+const COIN_PATH = '/assets/coin.glb';
+const COIN_TARGET_HEIGHT = 0.55;
+
+/**
+ * client/public/assets/coin.glb dosyasını para modeli olarak kullanır
+ * (otomatik ölçeklenip ortalanır). Prosedürel/otomatik üretilen bir
+ * yedek para YOKTUR — sadece coin.glb kullanılır. Dosya yoksa/bozuksa
+ * oyunun çökmemesi için çok küçük nötr bir yer tutucu küre gösterilir.
+ */
+export class Coin {
+  readonly group = new THREE.Group();
+  private spinSpeed = 2.2;
+
+  private constructor(private usingCustomModel: boolean) {}
+
+  static async create(scene: THREE.Scene): Promise<Coin> {
+    const custom = await Coin.tryLoadModel();
+    const coin = new Coin(!!custom);
+    if (custom) {
+      custom.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+        }
+      });
+      custom.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(custom);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      const scale = size.y > 0.0001 ? COIN_TARGET_HEIGHT / size.y : 1;
+      custom.scale.setScalar(scale);
+      custom.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
+      coin.group.add(custom);
+    } else {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.22, 12, 10),
+        new THREE.MeshStandardMaterial({ color: 0x8b5cf6, emissive: 0x4c1d95, emissiveIntensity: 0.5 })
+      );
+      mesh.castShadow = true;
+      coin.group.add(mesh);
+    }
+    scene.add(coin.group);
+    return coin;
+  }
+
+  private static async tryLoadModel(): Promise<THREE.Object3D | null> {
+    try {
+      return await new Promise<THREE.Object3D>((resolve, reject) => {
+        const loader = new GLTFLoader();
+        const draco = new DRACOLoader();
+        draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+        loader.setDRACOLoader(draco);
+        loader.load(
+          COIN_PATH,
+          (gltf) => resolve(gltf.scene),
+          undefined,
+          (err) => reject(err)
+        );
+      });
+    } catch (err) {
+      console.error(
+        `[Coin] ${COIN_PATH} yüklenemedi. Dosyanın client/public/assets/coin.glb yolunda ` +
+          'gerçekten var olduğundan ve geçerli bir GLB olduğundan emin ol.',
+        err
+      );
+      return null;
+    }
+  }
+
+  setPosition(x: number, y: number, z: number): void {
+    this.group.position.set(x, y, z);
+  }
+
+  update(dt: number, elapsed: number): void {
+    this.group.rotation.y += dt * this.spinSpeed;
+    this.group.position.y += Math.sin(elapsed * 3) * 0.002;
+  }
+}
