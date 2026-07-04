@@ -3,7 +3,7 @@
 Tek odalı, herkesin aynı anda aynı alanda gezindiği 3D bir oyun. Tek
 komutla hem sunucuyu hem istemciyi birlikte çalıştırır.
 
-## Neler var (v4)
+## Neler var 
 
 - **Tek komutla çalıştırma**: kökten `npm run dev` hem server'ı hem client'ı
   aynı anda başlatır (`concurrently`).
@@ -152,7 +152,6 @@ güncellemeniz yeterlidir:
 |---|---|---|
 | `client/public/assets/character.glb` | Oyuncu karakteri | Basit mor kapsül yer tutucu |
 | `client/public/assets/coin.glb` | Toplanacak para | Basit mor küre yer tutucu |
-| `client/public/assets/island.glb` | Oyun dünyası/zemin | Dalgalı prosedürel zemin |
 | `client/public/assets/plate/*.glb` + `manifest.json` | Seçilebilir isim plakaları | Sade metin etiketi (seçim ekranı da görünmez) |
 
 ### İsim plakası ekleme (birden çok, seçilebilir)
@@ -180,19 +179,6 @@ sıkıştırmalı). Boyunu `.env` içindeki `VITE_CHARACTER_HEIGHT`
 tabanı yere oturtulur ve ortalanır — **hiçbir deformasyon veya animasyon
 uygulanmaz**, modeliniz tasarladığınız gibi görünür.
 
-### Kendi adanızı eklemek
-
-1. Blender / başka bir araçtan dışa aktardığınız `island.glb` dosyasını
-   `client/public/assets/island.glb` olarak koyun.
-2. Oyunu yeniden başlatın (`npm run dev`).
-3. Karakter artık adanın **gerçek yüzeyinde** yürür (her x/z noktası için
-   yukarıdan aşağı ışın atılarak yükseklik bulunur). Adanın dışına
-   çıkamaz — model nereye kadar mesh varsa oraya kadar gidilebilir, yapay
-   bir çember sınırı yoktur. Ters normal/ters yüz sarımı olan modellerde
-   bile raycast doğru çalışır (materyaller otomatik olarak çift taraflı
-   yapılır).
-4. İstediğiniz kadar büyük/karmaşık bir ada kullanabilirsiniz; sadece dosya
-   boyutu yüklenme süresini etkiler (Draco sıkıştırması önerilir).
 
 ### İsim plakanızı eklemek
 
@@ -231,7 +217,7 @@ server/
     room.ts      # oda/oyun mantığı: oyuncular, para döngüsü, heartbeat
     types.ts     # istemci <-> sunucu mesaj tipleri
 client/
-  public/assets/ # character.glb / coin.glb / island.glb / plate/*.glb+manifest.json buraya
+  public/assets/ # character.glb / coin.glb / plate/*.glb+manifest.json buraya
   src/
     main.ts             # sahneyi kurar, döngüyü çalıştırır
     config.ts            # .env değerlerini okur
