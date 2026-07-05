@@ -29,6 +29,7 @@ const STRINGS: Record<Lang, Dict> = {
     plateLabel: 'İsim Plakası',
     plateNone: 'Plakasız',
     plateLoading: 'Plakalar yükleniyor…',
+    mapTitle: 'Harita',
   },
   en: {
     loading: 'Loading scene…',
@@ -56,6 +57,7 @@ const STRINGS: Record<Lang, Dict> = {
     plateLabel: 'Name Plate',
     plateNone: 'No plate',
     plateLoading: 'Loading plates…',
+    mapTitle: 'Map',
   },
 };
 

@@ -8,6 +8,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { networkInterfaces } from 'os';
 import { WebSocketServer } from 'ws';
 import { Room } from './room.js';
 
@@ -36,8 +37,15 @@ room.start();
 // 'state'/'players' paketlerini) sıkıştırarak ağ trafiğini düşürür.
 // threshold, çok küçük mesajları (ör. tek oyunculu 'move') boşuna
 // sıkıştırmaya çalışıp CPU harcamamak için bir alt sınır koyar.
+//
+// host: '0.0.0.0' AÇIKÇA belirtiliyor — bazı Android/Termux kurulumlarında
+// host verilmezse sunucu beklenenden farklı bir arayüze bağlanabiliyor ve
+// aynı ağdaki başka bir cihaz (2. oyuncu) bağlanamıyor, oysa aynı cihazdan
+// (localhost) her zaman çalışıyor gibi görünüyor. 0.0.0.0 = tüm ağ
+// arayüzlerinden gelen bağlantıları kabul et.
 const wss = new WebSocketServer({
   port: PORT,
+  host: '0.0.0.0',
   perMessageDeflate: {
     threshold: 256,
   },
@@ -49,8 +57,23 @@ wss.on('connection', (ws) => room.handleConnection(ws));
 const heartbeat = setInterval(() => room.pruneDeadConnections(), HEARTBEAT_MS);
 wss.on('close', () => clearInterval(heartbeat));
 
-console.log(`3D Çim Alanı sunucusu çalışıyor -> ws://localhost:${PORT}`);
+console.log(`3D Çim Alanı sunucusu çalışıyor -> ws://0.0.0.0:${PORT} (tüm arayüzler)`);
 console.log(`Arena yarıçapı: ${ARENA_RADIUS} | Para döngüsü: ${COIN_CYCLE_MS}ms | Tick: ${TICK_MS}ms`);
+
+// Aynı ağdaki başka bir cihazdan (2. oyuncu) bağlanırken hangi IP'yi
+// kullanması gerektiğini görmesi için: makinedeki TÜM LAN IP'lerini
+// yazdırıyoruz. .env'deki VITE_WS_URL bunlardan biriyle EŞLEŞMİYORSA
+// (ör. telefon hem Wi-Fi'ye hem hotspot'a bağlıysa iki farklı IP olabilir)
+// ikinci oyuncu asla bağlanamaz — bu listeden doğru olanı .env'e yazın.
+const nets = networkInterfaces();
+console.log('Bu makinedeki LAN IP\'leri (2. oyuncunun .env\'deki VITE_WS_URL için kullanması gerekenler):');
+for (const [name, addrs] of Object.entries(nets)) {
+  for (const addr of addrs ?? []) {
+    if (addr.family === 'IPv4' && !addr.internal) {
+      console.log(`  ${name}: ws://${addr.address}:${PORT}`);
+    }
+  }
+}
 
 process.on('SIGINT', () => {
   console.log('\nSunucu kapatılıyor...');

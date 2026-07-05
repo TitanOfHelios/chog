@@ -5,7 +5,6 @@ interface ImportMetaEnv {
 
   readonly VITE_CHARACTER_MODEL_PATH: string;
   readonly VITE_COIN_MODEL_PATH: string;
-  readonly VITE_ISLAND_MODEL_PATH: string;
   readonly VITE_PLATE_FOLDER: string;
 
   readonly VITE_CHARACTER_HEIGHT: string;

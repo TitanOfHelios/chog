@@ -17,7 +17,6 @@ export const CONFIG = {
   // ---------- 3D model dosya yolları ----------
   CHARACTER_MODEL_PATH: (import.meta.env.VITE_CHARACTER_MODEL_PATH as string | undefined) || '/assets/character.glb',
   COIN_MODEL_PATH: (import.meta.env.VITE_COIN_MODEL_PATH as string | undefined) || '/assets/coin.glb',
-  ISLAND_MODEL_PATH: (import.meta.env.VITE_ISLAND_MODEL_PATH as string | undefined) || '/assets/island.glb',
   // İsim plakası TEK dosya değil, bu KLASÖRDEKİ manifest.json'da listelenen
   // birden çok .glb dosyasından oluşur (login ekranında seçilebilir).
   PLATE_FOLDER: (import.meta.env.VITE_PLATE_FOLDER as string | undefined) || '/assets/plate/',

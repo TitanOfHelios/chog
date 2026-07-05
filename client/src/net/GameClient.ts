@@ -29,6 +29,7 @@ export class GameClient {
   private listeners: { [K in keyof GameClientEvents]?: Listener<GameClientEvents[K]>[] } = {};
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private connectTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
   private shouldReconnect = false;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
   private lastPingSentAt = 0;
@@ -55,6 +56,7 @@ export class GameClient {
   disconnect(): void {
     this.shouldReconnect = false;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    if (this.connectTimeoutTimer) clearTimeout(this.connectTimeoutTimer);
     if (this.pingTimer) clearInterval(this.pingTimer);
     this.ws?.close();
   }
@@ -70,7 +72,21 @@ export class GameClient {
     }
     this.ws = socket;
 
+    // Bazı ağlarda (ör. bir cihazdan diğerine ulaşan port engelliyse) TCP
+    // bağlantısı ne açılır ne de hemen hata verir — soket süresiz
+    // "connecting" durumunda asılı kalır ve kullanıcı arayüzde sonsuza
+    // kadar "Bağlanıyor…" görür. Bunu önlemek için açık bir zaman aşımı
+    // koyuyoruz: süre dolunca soketi kapatıp gerçek bir hata bildiriyoruz.
+    if (this.connectTimeoutTimer) clearTimeout(this.connectTimeoutTimer);
+    this.connectTimeoutTimer = setTimeout(() => {
+      if (socket.readyState === socket.CONNECTING) {
+        socket.close();
+        this.emit('error', undefined);
+      }
+    }, 7000);
+
     socket.onopen = () => {
+      if (this.connectTimeoutTimer) clearTimeout(this.connectTimeoutTimer);
       this.reconnectAttempt = 0;
       this.send({ type: 'join', name: this.name, plateId: this.plateId });
       this.emit('open', undefined);
@@ -90,6 +106,7 @@ export class GameClient {
     socket.onerror = () => this.emit('error', undefined);
 
     socket.onclose = () => {
+      if (this.connectTimeoutTimer) clearTimeout(this.connectTimeoutTimer);
       if (this.pingTimer) clearInterval(this.pingTimer);
       this.emit('close', undefined);
       this.scheduleReconnect();

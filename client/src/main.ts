@@ -10,6 +10,7 @@ import { Keyboard } from './input/Keyboard';
 import { CameraRig } from './input/CameraRig';
 import { Login } from './ui/Login';
 import { Hud } from './ui/Hud';
+import { GameMap } from './ui/GameMap';
 import { GameClient } from './net/GameClient';
 import type { PlayerState, PlayerMove, CoinState } from './types';
 import { t } from './i18n';
@@ -66,8 +67,11 @@ async function main(): Promise<void> {
   const hud = new Hud();
   const login = new Login();
 
-  // ---------- ARAZİ (özel ada modeli varsa onu, yoksa prosedürel çim alanı) ----------
+  // ---------- ARAZİ (prosedürel biyom alanları: çim / çöl / kar / yağmur ormanı) ----------
   const terrain = await Terrain.create(scene);
+
+  // ---------- HARİTA (basit PUBG tarzı minimap + tam harita) ----------
+  const gameMap = new GameMap(terrain.proceduralRadius);
 
   // ---------- ORTADAKİ HEYKELLER (character.glb/coin.glb ile aynı paternde,
   // client/public/assets içinden yüklenir; dosya yoksa otomatik yedeğe döner) ----------
@@ -284,9 +288,10 @@ async function main(): Promise<void> {
     hud.renderLeaderboard(entries, myId);
   }
 
-  client.on('welcome', ({ id }) => {
+  client.on('welcome', ({ id, arenaRadius }) => {
     myId = id;
     login.hide();
+    gameMap.setWorldRadius(arenaRadius);
   });
   client.on('players', ({ players }) => syncPlayerList(players));
   // 'state' artık sadece konum taşır (bkz. server/src/room.ts) — para
@@ -410,8 +415,6 @@ async function main(): Promise<void> {
     }
 
     if (moved) {
-      // Karakter, arazinin/adanın gerçek yüzeyi neresi biterse orada durur;
-      // yapay bir dairesel sınır yok — adanın her noktasına gidebilir.
       const groundH = terrain.heightAt(candX, candZ);
       if (groundH !== null) {
         charState.x = candX;
@@ -460,6 +463,12 @@ async function main(): Promise<void> {
     // --- Para animasyonu (sadece dönüş/hafif yüzme; yürüme animasyonu değil) ---
     coin.update(dt, clock.elapsedTime);
     if (myId) hud.updateCoinTimer(coinState.endsAt);
+
+    // --- Harita (minimap + tam harita) ---
+    gameMap.update(
+      { x: charState.x, z: charState.z, facing: charState.facing },
+      Array.from(remotePlayers.values()).map((rp) => ({ x: rp.group.position.x, z: rp.group.position.z }))
+    );
 
     // --- Kamera (karakterin etrafında, yaw/pitch/distance ile) ---
     cameraRig.update(dt, character.position, camera);

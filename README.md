@@ -1,126 +1,156 @@
 # The 7 Seconds Chog — TypeScript Multiplayer
 
-A single-room, 3D game where everyone moves around in the same space at
-the same time. One command runs both the server and the client together.
+Tek odalı, herkesin aynı anda aynı alanda gezindiği 3D bir oyun. Tek
+komutla hem sunucuyu hem istemciyi birlikte çalıştırır.
 
-## Features
+## Sorun giderme: "Failed to resolve entry for package three"
 
-- **Single-command run**: `npm run dev` from the root starts both the
-  server and the client at the same time (`concurrently`).
-- **TypeScript**: both `server/` and `client/` are fully TS.
-- **A SINGLE `.env` file**: server port, arena settings, WebSocket
-  address, 3D model file paths, character/coin/plate sizes, movement
-  speed, camera and joystick settings — everything is read from **one
-  `.env`** file at the project root. You never need to touch the code
-  to change something; just edit `.env` and restart. The `ws://`
-  address is **not shown/requested** on the login screen — it's
-  automatically pulled from `.env`.
-- **No walking animation**: the character doesn't sway/bounce; only
-  its position and direction change. Your model stays fixed in its
-  **original appearance** from the GLB file.
-- **Simple, library-free joystick**: a plain virtual joystick that
-  uses no external packages and works directly with
-  touch/mouse events. Its behavior is completely straightforward: push
-  right and the character moves right in the world, push forward and
-  it moves forward, push back and it moves back — the joystick doesn't
-  rotate the camera, it only makes the character walk. Drag the screen
-  to rotate the camera. On keyboard, W/S for forward/back and A/D to
-  rotate the camera (and character) continue to work as before.
-- **Gradual acceleration**: holding down SPRINT gradually increases
-  speed (reaching maximum in ~2 seconds), and releasing it smoothly
-  returns to normal.
-- **Three custom models**: `character.glb` (player), `coin.glb` (coin),
-  and `island.glb` (island/ground). If any are missing, the game runs
-  smoothly with simple placeholders (purple capsule/sphere, procedural
-  ground — no more grass).
-- **Selectable name plates**: put as many `.glb` plate models as you
-  like into the `client/public/assets/plate/` folder and add them to
-  `manifest.json` — they automatically become selectable via small
-  preview cards on the login screen. The plate you choose is shown on
-  your own character and is also sent to other players, so everyone
-  sees the same plate. Each plate has a subtle light attached to it so
-  it stays readable regardless of the world's sun angle. The plate's
-  width **automatically stretches/shrinks based on the name** (narrower
-  for short names, wider for long ones); the height/depth ratio is not
-  distorted. If no plates are added at all, the selection screen
-  doesn't appear, and names are shown as plain text labels.
-- **Central statue**: a deliberately colorless/plain simple stone
-  statue stands at the center of the map, requiring no `.glb`
-  (can be toggled on/off via `VITE_STATUE_*`, with adjustable color/size).
-- **Credits area**: if `VITE_CREDITS_TEXT` (and optionally
-  `VITE_CREDITS_URL`) is filled in, a small credits note appears below
-  the login screen; if empty, it doesn't appear at all.
-- **Purple UI**: the login screen, HUD, coin timer bar, etc. are
-  purple-themed.
-- **Multiplayer**: automatic reconnection, ping indicator, join/leave,
-  server-side heartbeat, message validation.
+Bazı ortamlarda (özellikle Termux/Android üzerinde) `npm run dev`
+çalıştırınca client tarafında şu hatayı görebilirsiniz:
 
-## Setup
+```
+✘ [ERROR] Failed to resolve entry for package "three".
+```
+
+Bu, kodla ilgili bir hata değildir — `client/node_modules/three`
+paketinin **eksik/yarım kurulmuş** olduğu anlamına gelir (genelde mobil
+ağda kesinti veya depolama izin sorunları yüzünden). Çözüm:
+
+```bash
+cd client
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+ls node_modules/three/build   # three.module.js burada görünmeli
+```
+
+Eğer `node_modules/three/build` klasörü boşsa ya da hiç yoksa, kurulum
+hâlâ yarım kalmış demektir; `npm install --fetch-retries=5` ile tekrar
+deneyin. `vite.config.ts` içine ayrıca `optimizeDeps.include: ['three']`
+eklendi — bu, Vite'ın `three`'yi baştan açıkça ön-paketlemesini sağlayıp
+esbuild'in ilk tarama adımındaki bu çözümleme hatasını çoğu durumda
+by-pass eder, ama kalıcı çözüm yine de temiz bir `npm install`'dur.
+
+## Neler var (v4)
+
+- **Tek komutla çalıştırma**: kökten `npm run dev` hem server'ı hem client'ı
+  aynı anda başlatır (`concurrently`).
+- **TypeScript**: hem `server/` hem `client/` tamamen TS.
+- **TEK .env dosyası**: sunucu portu, arena ayarları, WebSocket adresi,
+  3D model dosya yolları, karakter/para/plaka boyutları, hareket hızı,
+  kamera ve joystick ayarları — hepsi kök dizindeki **tek bir `.env`**
+  dosyasından okunur. Bir şeyi değiştirmek için kod içine girmeye gerek
+  yok, sadece `.env`'i düzenleyip yeniden başlatın. Giriş ekranında
+  `ws://` adresi **gösterilmez/istenmez** — otomatik olarak `.env`'den
+  alınır.
+- **Yürüme animasyonu yok**: karakter sallanmıyor/zıplamıyor; sadece konum
+  ve yön değişiyor. Modeliniz GLB dosyasındaki **orijinal görünümüyle**
+  sabit kalır.
+- **Basit, kütüphanesiz joystick**: dışarıdan hiçbir paket kullanmayan,
+  doğrudan dokunmatik/fare olaylarıyla çalışan sade bir sanal joystick.
+  Davranışı tamamen düz: sağa iterseniz karakter dünyada sağa, ileri
+  iterseniz ileri, geri iterseniz geri gider — joystick kamerayı
+  döndürmez, sadece yürütür. Kamerayı çevirmek için ekranı sürükleyin.
+  Klavyede W/S ile ileri/geri, A/D ile kamerayı (ve karakteri) döndürme
+  eskisi gibi çalışmaya devam eder.
+- **Kademeli hızlanma**: HIZLAN'ı basılı tuttukça hız kademeli olarak
+  artar (~2 saniyede maksimuma ulaşır), bırakınca yumuşakça normale döner.
+- **İki özel model**: `character.glb` (oyuncu) ve `coin.glb` (para).
+  Hiçbiri yoksa oyun basit yer tutucularla (mor kapsül/küre) sorunsuz
+  çalışır.
+- **Prosedürel biyom sistemi**: zemin, merkezdeki güvenli çim alanının
+  etrafında dört biyoma bölünür — çim, çöl, kar ve yağmur ormanı — her
+  biri kendi rengi, yükseklik profili ve basit bitki örtüsüyle (ağaç/
+  kaktüs) prosedürel olarak üretilir; harici bir model/dosya gerekmez.
+- **Basit harita sistemi (PUBG tarzı)**: sağ üstte küçük bir radar
+  (minimap) her zaman görünür; üzerine dokunmak ya da **M** tuşuna
+  basmak tüm haritayı büyük şekilde açar (oyuncu konumu/yönü ve diğer
+  oyuncular gösterilir).
+- **Seçilebilir isim plakaları**: `client/public/assets/plate/` klasörüne
+  istediğiniz kadar `.glb` plaka modeli koyup `manifest.json`'a
+  ekleyin — giriş ekranında küçük önizleme kartlarıyla otomatik olarak
+  seçilebilir hale gelirler. Seçtiğiniz plaka hem kendi karakterinizde
+  hem diğer oyunculara iletilerek onlarda da görünür — herkes aynı
+  plakayı görür. Her plakaya, dünyanın güneş açısından bağımsız her
+  zaman okunaklı kalması için hafif bir ışık asılıdır. Plakanın
+  genişliği **isme göre otomatik uzar/kısalır** (kısa isimlerde daralır,
+  uzun isimlerde genişler); yükseklik/derinlik oranı bozulmaz. Hiç plaka
+  eklenmemişse seçim ekranı görünmez, isimler sade yazı etiketiyle
+  gösterilir.
+- **Ortadaki heykel**: haritanın merkezinde `.glb` gerektirmeyen, kasıtlı
+  olarak renksiz/sade basit bir taş heykel durur (`VITE_STATUE_*` ile
+  açılıp kapatılabilir, rengi/boyu ayarlanabilir).
+- **Credit alanı**: `VITE_CREDITS_TEXT` (ve isteğe bağlı `VITE_CREDITS_URL`)
+  doldurulursa giriş ekranının altında küçük bir yapımcı notu belirir;
+  boşsa hiç görünmez.
+- **Mor arayüz**: Giriş ekranı, HUD, para süresi çubuğu vb. mor temalıdır.
+- **Multiplayer**: otomatik yeniden bağlanma, ping göstergesi,
+  katılma/ayrılma, sunucuda heartbeat, mesaj doğrulama.
+
+## Kurulum
 
 ```bash
 npm install
 ```
 
-This single command installs all dependencies for the root, `server/`,
-and `client/` (via the `postinstall` script).
+Bu tek komut kök, `server/` ve `client/` bağımlılıklarının hepsini kurar
+(`postinstall` scripti sayesinde).
 
-Then create the **single `.env` file** (at the project root, NEXT TO
-the `server/` and `client/` folders — not inside them):
+Sonra **tek `.env` dosyasını** oluşturun (proje kökünde, `server/` ve
+`client/` klasörlerinin YANINDA — içlerinde değil):
 
 ```bash
 cp .env.example .env
 ```
 
-## Running (single command)
+## Çalıştırma (tek komut)
 
 ```bash
 npm run dev
 ```
 
-- Server: `ws://localhost:8080` (or the `PORT` from `.env`)
-- Client: `http://localhost:3000`
+- Sunucu: `ws://localhost:8080` (ya da `.env`'deki `PORT`)
+- İstemci: `http://localhost:3000`
 
-Open `http://localhost:3000` in your browser, type a name, and click
-**Join Room**. The server address is automatically read from
-`VITE_WS_URL` in the root `.env`; it's not shown separately on the
-login screen.
+Tarayıcıda `http://localhost:3000` adresini açın, isim yazın ve **Odaya
+Gir**'e basın. Sunucu adresi kökteki `.env` içindeki `VITE_WS_URL`
+değerinden otomatik okunur; giriş ekranında ayrıca gösterilmez.
 
-Whenever you change `.env`, you need to stop and restart `npm run dev`
-(both Vite and Node only read it on startup).
+`.env`'i her değiştirdiğinizde `npm run dev`'i durdurup yeniden
+başlatmanız gerekir (hem Vite hem Node sadece açılışta okur).
 
-## A single `.env` file — everything here
+## Tek `.env` dosyası — her şey burada
 
-There used to be two separate files, `server/.env` and `client/.env`;
-now **a single file** (`.env` at the project root) feeds both. Names
-prefixed with `VITE_` go to the browser (client); the rest go only to
-the server. See the root **`.env.example`** file for the full list and
-explanations; the main groups are:
+Eskiden `server/.env` ve `client/.env` diye iki ayrı dosya vardı, artık
+**tek dosya** (proje kökünde `.env`) her ikisini de besliyor. İsim
+önünde `VITE_` olanlar tarayıcıya (istemciye), olmayanlar sadece
+sunucuya gider. Tam liste ve açıklamalar için kökteki **`.env.example`**
+dosyasına bakın; başlıca gruplar:
 
 ```bash
-# Server
+# Sunucu
 PORT=8080
 ARENA_RADIUS=85
 COIN_CYCLE_MS=7000
 TICK_MS=100
 HEARTBEAT_MS=15000
 
-# Client: server address
-VITE_WS_URL=ws://localhost:8080   # if testing from a phone, use your LAN IP
+# İstemci: sunucu adresi
+VITE_WS_URL=ws://localhost:8080   # telefondan test ediyorsanız LAN IP'nizi yazın
 
-# Client: 3D model file paths
+# İstemci: 3D model dosya yolları
 VITE_CHARACTER_MODEL_PATH=/assets/character.glb
 VITE_COIN_MODEL_PATH=/assets/coin.glb
-VITE_ISLAND_MODEL_PATH=/assets/island.glb
-VITE_PLATE_FOLDER=/assets/plate/   # plates listed in the folder's manifest.json
+VITE_PLATE_FOLDER=/assets/plate/   # klasördeki manifest.json'da listelenen plakalar
 
-# Client: sizes
+# İstemci: boyutlar
 VITE_CHARACTER_HEIGHT=1.3
 VITE_COIN_HEIGHT=0.55
 VITE_PLATE_MIN_WIDTH=1.1
 VITE_PLATE_MAX_WIDTH=3.4
 VITE_PLATE_WIDTH_PER_CHAR=0.16
 
-# Client: movement / physics
+# İstemci: hareket / fizik
 VITE_MOVE_SPEED=4.2
 VITE_TURN_SPEED=3.0
 VITE_JUMP_VELOCITY=6.2
@@ -129,125 +159,145 @@ VITE_SPRINT_MAX_MULT=2.8
 VITE_SPRINT_RAMP_TIME=2.0
 VITE_SPRINT_DECAY_RATE=1.6
 
-# Client: camera
+# İstemci: kamera
 VITE_CAMERA_DISTANCE=7
 VITE_CAMERA_DISTANCE_MIN=3
 VITE_CAMERA_DISTANCE_MAX=16
 VITE_CAMERA_PITCH=0.38
 
-# Client: joystick
+# İstemci: joystick
 VITE_JOYSTICK_DEADZONE=0.1
 ```
 
-`VITE_WS_URL` is the WebSocket address the client connects to (e.g.
-after deploying the server to a service like Render/Railway, put the
-`wss://...` address here and rebuild). There is **no** separate box for
-this address on the login screen — it's automatically injected at
-build time.
+`VITE_WS_URL`, istemcinin bağlanacağı WebSocket adresidir (ör. sunucuyu
+Render/Railway gibi bir servise yükledikten sonra oradaki `wss://...`
+adresini buraya yazıp yeniden build alın). Giriş ekranında bu adres için
+ayrı bir kutu **yoktur** — build zamanında otomatik enjekte edilir.
 
-## Your own 3D models
+## Kendi 3D modelleriniz
 
-By default, all models go into the `client/public/assets/` folder and
-are **automatically** detected (if a file is missing, the game falls
-back smoothly to a placeholder/procedural version). If you want to
-change the file name/folder, you just need to update the
-`VITE_..._MODEL_PATH` value in `.env` instead of the code:
+Varsayılan olarak tüm modeller `client/public/assets/` klasörüne konur
+ve **otomatik** algılanır (dosya yoksa oyun sorunsuz şekilde yer
+tutucuya/prosedürele geri döner). Dosya adını/klasörünü değiştirmek
+isterseniz kod yerine `.env`'deki `VITE_..._MODEL_PATH` değerini
+güncellemeniz yeterlidir:
 
-| File (default path) | What it does | What happens if missing |
+| Dosya (varsayılan yol) | Ne işe yarar | Yoksa ne olur |
 |---|---|---|
-| `client/public/assets/character.glb` | Player character | Simple purple capsule placeholder |
-| `client/public/assets/coin.glb` | Collectible coin | Simple purple sphere placeholder |
-| `client/public/assets/plate/*.glb` + `manifest.json` | Selectable name plates | Plain text label (selection screen doesn't appear either) |
+| `client/public/assets/character.glb` | Oyuncu karakteri | Basit mor kapsül yer tutucu |
+| `client/public/assets/coin.glb` | Toplanacak para | Basit mor küre yer tutucu |
+| `client/public/assets/plate/*.glb` + `manifest.json` | Seçilebilir isim plakaları | Sade metin etiketi (seçim ekranı da görünmez) |
 
-### Adding a name plate (multiple, selectable)
+Zemin artık her zaman prosedüreldir (bkz. "Biyomlar" bölümü) — ayrı bir
+model dosyası gerekmez.
 
-`plate.glb` is no longer a single file — you put as many `.glb` files
-as you like into the `client/public/assets/plate/` folder and register
-them in the `manifest.json` in the same folder:
+### İsim plakası ekleme (birden çok, seçilebilir)
+
+`plate.glb` artık tek bir dosya değil — `client/public/assets/plate/`
+klasörüne istediğiniz kadar `.glb` koyup aynı klasördeki
+`manifest.json`'a kaydedersiniz:
 
 ```json
 [
   { "id": "neon", "file": "neon.glb", "label": "Neon" },
-  { "id": "ahsap", "file": "ahsap.glb", "label": "Wooden Sign" }
+  { "id": "ahsap", "file": "ahsap.glb", "label": "Ahşap Tabela" }
 ]
 ```
 
-Each one appears as a small 3D preview card on the login screen; the
-player picks one (or says "No Plate"), the choice is sent to the
-server, and other players see the same plate too. If `manifest.json`
-is left empty (`[]`), the selection area doesn't appear at all —
-nothing breaks. See `client/public/assets/plate/README.md` for the
-detailed format.
+Giriş ekranında her biri küçük bir 3D önizleme kartı olarak görünür,
+oyuncu birini seçer (ya da "Plakasız" der), seçimi sunucuya iletilir ve
+diğer oyuncular da aynı plakayı görür. `manifest.json` boş (`[]`)
+kalırsa seçim alanı hiç görünmez — hiçbir şey bozulmaz. Ayrıntılı format
+için `client/public/assets/plate/README.md` dosyasına bakın.
 
-`character.glb` already comes with your uploaded model (~34 MB, Draco
-compressed). You can adjust its height with `VITE_CHARACTER_HEIGHT` in
-`.env` (default 1.3 units); the model is automatically scaled, has its
-base placed on the ground, and is centered — **no deformation or
-animation is applied**, your model looks exactly as you designed it.
+`character.glb` zaten yüklü modelinizle birlikte geldi (~34 MB, Draco
+sıkıştırmalı). Boyunu `.env` içindeki `VITE_CHARACTER_HEIGHT`
+(varsayılan 1.3 birim) ile ayarlayabilirsiniz; model otomatik ölçeklenir,
+tabanı yere oturtulur ve ortalanır — **hiçbir deformasyon veya animasyon
+uygulanmaz**, modeliniz tasarladığınız gibi görünür.
 
-### Adding your name plate
+### Biyomlar
 
-See the "Adding a name plate (multiple, selectable)" section above —
-just put your `.glb` files into `client/public/assets/plate/` and
-register them in `manifest.json`.
+Ada/özel zemin modeli desteği kaldırıldı — zemin artık her zaman
+`client/src/scene/Terrain.ts` içinde prosedürel olarak üretilir. Merkezdeki
+güvenli çim alanının (heykellerin durduğu yer) dışında, dünya merkez
+etrafında 4 eşit açısal dilime bölünür ve her dilim ayrı bir biyomdur:
+çim, çöl, kar, yağmur ormanı — sınırlarda renk/yükseklik yumuşakça
+karışır. Her biyomun kendine has bir renk paleti, yükseklik profili
+(örn. yağmur ormanı daha inişli çıkışlı, çöl daha düz) ve basit
+prosedürel bitki örtüsü (ağaç/kaktüs) vardır; hiçbir harici dosya
+gerekmez. Sektör sırasını, renkleri ya da yükseklik formüllerini
+değiştirmek isterseniz `Terrain.ts` içindeki `BIOME_ORDER`,
+`BIOME_COLOR` ve `biomeHeight()` fonksiyonuna bakın.
 
-## Controls
+### Harita (minimap + tam harita)
 
-- **Joystick (bottom left, library-free)**: push right and the
-  character goes right, push forward and it goes forward, push back
-  and it goes back. The joystick doesn't rotate the camera, it only
-  makes the character walk. Works with both touch and mouse.
-- **Keyboard**: W/S forward-back, A/D to rotate the camera (and
-  character) — gives full control on desktop.
-- **Drag the screen/mouse**: changes the viewing angle (you can turn
-  the camera in any direction you like).
-- **Pinch with two fingers / mouse wheel**: zoom in-out.
-- **JUMP**: jumping (the Space key also works).
-- **SPRINT**: speed gradually increases the longer you hold it down
-  (Shift also works).
+Sağ üstte küçük dairesel bir radar sürekli görünür; oyuncunun konumu/
+baktığı yön bir ok ile, diğer oyuncular nokta olarak gösterilir. Radara
+dokunmak ya da klavyede **M** tuşuna basmak tüm haritayı ortada büyük
+şekilde açar; tekrar dokununca/M'ye basınca ya da kapat (✕) düğmesine
+tıklayınca kapanır. Kod: `client/src/ui/GameMap.ts`.
 
-## Game rules
+### İsim plakanızı eklemek
 
-- Single room, always open.
-- A **coin** appears at a random point, with a **7 second**
-  (`COIN_CYCLE_MS`) time limit — that's where the game's name comes
-  from.
-- Whoever catches it first within that time gets +1 point, and the
-  coin immediately appears in a new spot. If no one catches it, it
-  also reappears in a new spot.
-- The **LEADERBOARD** button in the top right shows the score table.
+Bkz. yukarıdaki "İsim plakası ekleme (birden çok, seçilebilir)" bölümü —
+`client/public/assets/plate/` klasörüne `.glb` dosyalarınızı koyup
+`manifest.json`'a kaydetmeniz yeterli.
 
-## Project structure
+## Kontroller
+
+- **Joystick (sol alt, kütüphanesiz)**: sağa iterseniz karakter sağa,
+  ileri iterseniz ileri, geri iterseniz geri gider. Joystick kamerayı
+  döndürmez, sadece yürütür. Hem dokunmatikte hem fareyle çalışır.
+- **Klavye**: W/S ileri-geri, A/D ile kamerayı (ve karakteri) döndürme —
+  masaüstünde tam kontrol sağlar.
+- **Ekranı/mouse'u sürükle**: bakış açısını değiştirir (kamerayı
+  istediğiniz yöne çevirebilirsiniz).
+- **İki parmakla kıstır / fare tekerleği**: yakınlaş–uzaklaş.
+- **ZIPLA**: zıplama (Boşluk tuşu da çalışır).
+- **HIZLAN**: basılı tuttukça hız kademeli olarak artar (Shift de çalışır).
+
+## Oyun kuralları
+
+- Tek oda, sürekli açık.
+- Rastgele bir noktada **para** belirir, **7 saniye** (`COIN_CYCLE_MS`)
+  süre verilir — oyunun adı da buradan gelir.
+- Süre içinde ilk yakalayan +1 puan alır, para hemen yeni bir yerde
+  belirir. Kimse alamazsa da yeni yerde tekrar belirir.
+- Sağ üstteki **SIRALAMA** butonuyla skor tablosu görülür.
+
+## Proje yapısı
 
 ```
 server/
   src/
-    index.ts     # entry point, reads .env, WebSocketServer
-    room.ts      # room/game logic: players, coin cycle, heartbeat
-    types.ts     # client <-> server message types
+    index.ts     # giriş noktası, .env okuma, WebSocketServer
+    room.ts      # oda/oyun mantığı: oyuncular, para döngüsü, heartbeat
+    types.ts     # istemci <-> sunucu mesaj tipleri
 client/
-  public/assets/ # character.glb / coin.glb / plate/*.glb+manifest.json go here
+  public/assets/ # character.glb / coin.glb / plate/*.glb+manifest.json buraya
   src/
-    main.ts             # sets up the scene, runs the loop
-    config.ts            # reads .env values
-    types.ts             # message types (synced with server/types.ts)
-    net/GameClient.ts    # WS client: reconnection, ping/latency
-    scene/Sky.ts          # sky texture
-    scene/Terrain.ts      # island model or procedural terrain + height query
-    character/CharacterFactory.ts # loads character.glb (placeholder fallback)
-    character/Coin.ts             # loads coin.glb (placeholder fallback)
-    character/NameTag.ts          # plain name text (canvas sprite)
-    character/NamePlate.ts        # combination of selected plate/*.glb + name text
-    character/plateManifest.ts    # plate/manifest.json reader (shared)
-    character/PlateThumbnails.ts  # plate preview images for the login screen
-    input/Joystick.ts             # library-free simple touch/mouse joystick
+    main.ts             # sahneyi kurar, döngüyü çalıştırır
+    config.ts            # .env değerlerini okur
+    types.ts             # mesaj tipleri (server/types.ts ile senkron)
+    net/GameClient.ts    # WS istemcisi: yeniden bağlanma, ping/latency
+    scene/Sky.ts          # gökyüzü dokusu
+    scene/Terrain.ts      # prosedürel biyomlu arazi + yükseklik sorgusu
+    ui/GameMap.ts          # minimap + tam harita (PUBG tarzı)
+    character/CharacterFactory.ts # character.glb yükler (yedeği yer tutucu)
+    character/Coin.ts             # coin.glb yükler (yedeği yer tutucu)
+    character/NameTag.ts          # düz isim yazısı (canvas sprite)
+    character/NamePlate.ts        # seçilen plate/*.glb + isim yazısı birleşimi
+    character/plateManifest.ts    # plate/manifest.json okuyucu (paylaşılan)
+    character/PlateThumbnails.ts  # giriş ekranı için plaka önizleme görüntüleri
+    input/Joystick.ts             # Kütüphanesiz basit dokunmatik/fare joystick
     input/Keyboard.ts, CameraRig.ts
-    ui/Login.ts (includes plate selection grid), Hud.ts
+    ui/Login.ts (plaka seçim ızgarası dahil), Hud.ts
 ```
 
-## Production build (optional)
+## Üretim derlemesi (opsiyonel)
 
 ```bash
-npm run build   # produces server/dist and client/dist
-npm start       # runs the compiled server + client preview
+npm run build   # server/dist ve client/dist üretir
+npm start       # derlenmiş sunucuyu + client önizlemesini çalıştırır
 ```
